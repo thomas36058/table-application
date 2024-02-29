@@ -1,113 +1,208 @@
-import Image from "next/image";
+"use client"
+
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
+
+import { useEffect, useState } from 'react';
+import { useTheme } from "next-themes"
+import { MoonIcon, SunIcon } from "lucide-react"
+
+interface Activity {
+    id: string;
+    time: string;
+    category: string;
+    description: string;
+    quantity: string;
+}
+
+export function ModeToggle() {
+    const { setTheme } = useTheme()
+   
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon">
+            <SunIcon className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <MoonIcon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Toggle theme</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => setTheme("light")}>
+            Light
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("dark")}>
+            Dark
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("system")}>
+            System
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+}
 
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    const [activities, setActivities] = useState<Activity[]>([]);
+    const [newActivity, setNewActivity] = useState({
+        category: '',
+        description: '',
+        quantity: '',
+    });
+    const { toast } = useToast()
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+    // Get data from localStorage when load the page
+    useEffect(() => {
+        const storedActivities = localStorage.getItem('activities');
+        if (storedActivities) {
+            setActivities(JSON.parse(storedActivities));
+        }
+    }, []);
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+    const handleAddActivity = () => {
+        // Avoid to add new activity unless fill all fields
+        if (!newActivity.category || !newActivity.description || !newActivity.quantity) {
+            toast({
+                variant: "error",
+                title: "Por favor, preencha todos os campos.",
+            })
+            return;
+        }
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+        const currentDate = new Date().toLocaleDateString();
+        const currentTime = new Date().toLocaleTimeString();
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
+        const updatedActivities = [
+            {
+                id: String(activities.length + 1),
+                time: `${currentDate} ${currentTime}`,
+                ...newActivity,
+            },
+            ...activities,
+        ];
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+        // Update the state activites with new activity
+        setActivities(updatedActivities);
+        // Update data on localStorage
+        localStorage.setItem('activities', JSON.stringify(updatedActivities));
+        // Clear all fields on form
+        setNewActivity({
+          category: '',
+          description: '',
+          quantity: '',
+        });
+
+        // Show toast when add new activity
+        toast({
+            variant: "success",
+            title: "Novo item adicionado com sucesso!",
+        })
+    };
+
+    const handleDeleteActivity = (id: string) => {
+        // Filter activities to remove the activity with match ID
+        const updatedActivities = activities.filter(activity => activity.id !== id)
+
+        // Update state activities without activity removed
+        setActivities(updatedActivities)
+
+        localStorage.setItem('activities', JSON.stringify(updatedActivities))
+
+        toast({
+            title: "Atividade removida!",
+        })
+    }
+
+    return (
+        <>
+            <div className="py-8 h-screen">
+                <div className="container relative">
+                    <h1 className="font-bold text-center text-xl mb-6 ">PET Control</h1>
+                    <div className="absolute left-0 top-0">
+                        <ModeToggle />
+                    </div>
+                    <div className="flex gap-4 mb-8">
+                        <Select
+                        value={newActivity.category}
+                        onValueChange={(category) => setNewActivity({ ...newActivity, category })}
+                        >
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="food">Food</SelectItem>
+                                <SelectItem value="medecine">Medecine</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Input
+                            type="text"
+                            placeholder="Description"
+                            value={newActivity.description}
+                            onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
+                        />
+                        <Input
+                            type="text"
+                            placeholder="Quantity"
+                            value={newActivity.quantity}
+                            onChange={(e) => setNewActivity({ ...newActivity, quantity: e.target.value })}
+                        />
+                        <Button variant="outline" onClick={handleAddActivity} className="hover:bg-">
+                            Add
+                        </Button>
+                    </div>
+                    <Table>
+                        <TableCaption>A list of your recent activities</TableCaption>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[100px]">ID</TableHead>
+                                <TableHead>Realizado em</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead className="text-right">Description</TableHead>
+                                <TableHead className="text-right">Quantity</TableHead>
+                                <TableHead></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {activities.map((activity) => (
+                                <TableRow key={activity.id}>
+                                    <TableCell className="font-medium">{activity.id}</TableCell>
+                                    <TableCell>{activity.time}</TableCell>
+                                    <TableCell>{activity.category}</TableCell>
+                                    <TableCell className="text-right ">{activity.description}</TableCell>
+                                    <TableCell className="text-right">{activity.quantity}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="destructive" onClick={() => handleDeleteActivity(activity.id)}>Remove</Button>
+                                    </TableCell>
+                                </TableRow>
+                            ) )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </div>
+        </>
+    );
 }
